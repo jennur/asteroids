@@ -13,19 +13,6 @@ export default {
       default: () => {},
     },
   },
-  /* data() {
-    let au = 5 / 0.01; // 5/relNum
-    return {
-      mercuryData: { theta: 0, r: 0.4 * this.au, x: 0.4 * this.au, y: 0 },
-      venusData: { theta: 0, r: 0.7 * this.au, x: 0.7 * this.au, y: 0 },
-      earthData: { theta: 0, r: this.au, x: this.au, y: 0 },
-      marsData: { theta: 0, r: 1.5 * this.au, x: 1.5 * this.au, y: 0 },
-      jupiterData: { theta: 0, r: 5.2 * this.au, x: 5.2 * this.au, y: 0 },
-      saturnData: { theta: 0, r: 9.5 * this.au, x: 9.5 * this.au, y: 0 },
-      uranusData: { theta: 0, r: 19.8 * this.au, x: 19.8 * this.au, y: 0 },
-      neptuneData: { theta: 0, r: 30 * this.au, x: 30 * this.au, y: 0 },
-    };
-  }, */
   computed: {
     realSunRadius: () => 696340, //km
     realAU: () => 149597871, //km
@@ -221,29 +208,16 @@ export default {
         neptune.data.theta += 0.3;
 
         requestAnimationFrame(animate);
-        let mercuryData = this.getNewPos(mercury.data, mercury.data.theta);
-        mercury.object.position.set(mercuryData.x, mercuryData.y, 0);
 
-        let venusData = this.getNewPos(venus.data, venus.data.theta);
-        venus.object.position.set(venusData.x, venusData.y, 0);
+        this.getNewPos(mercury);
+        this.getNewPos(venus);
+        this.getNewPos(earth);
+        this.getNewPos(mars);
+        this.getNewPos(jupiter);
+        this.getNewPos(saturn);
+        this.getNewPos(uranus);
+        this.getNewPos(neptune);
 
-        let earthData = this.getNewPos(earth.data, earth.data.theta);
-        earth.object.position.set(earthData.x, earthData.y, 0);
-
-        let marsData = this.getNewPos(mars.data, mars.data.theta);
-        mars.object.position.set(marsData.x, marsData.y, 0);
-
-        let jupiterData = this.getNewPos(jupiter.data, jupiter.data.theta);
-        jupiter.object.position.set(jupiterData.x, jupiterData.y, 0);
-
-        let saturnData = this.getNewPos(saturn.data, saturn.data.theta);
-        saturn.object.position.set(saturnData.x, saturnData.y, 0);
-
-        let uranusData = this.getNewPos(uranus.data, uranus.data.theta);
-        uranus.object.position.set(uranusData.x, uranusData.y, 0);
-
-        let neptuneData = this.getNewPos(neptune.data, neptune.data.theta);
-        neptune.object.position.set(neptuneData.x, neptuneData.y, 0);
         renderer.render(scene, camera);
       };
       animate();
@@ -251,12 +225,13 @@ export default {
       let solarSystem = this.$refs.solarSystem;
       solarSystem.append(renderer.domElement);
     },
-    getNewPos(planetData, theta) {
-      return {
-        theta,
-        x: getXPos(0, theta, planetData.r),
-        y: getYPos(0, theta, planetData.r),
+    getNewPos(planet) {
+      let planetData = {
+        theta: planet.data.theta,
+        x: getXPos(0, planet.data.theta, planet.data.r),
+        y: getYPos(0, planet.data.theta, planet.data.r),
       };
+      planet.object.position.set(planetData.x, planetData.y, 0);
 
       function getXPos(x, theta, radius) {
         return x + Math.cos((Math.PI / 180) * theta) * radius;
