@@ -1,3 +1,3 @@
-# Asteroids ☄️
+# Asteroids 
 
-Me playing with asteroid data
+Me playing with asteroid data ☄️
