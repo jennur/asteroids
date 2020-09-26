@@ -1,10 +1,8 @@
 <template>
   <div class="container">
-    <div>
-      <h1 class="title">This is our home</h1>
-      <h2 class="subtitle">Look at it!</h2>
-      <SolarSystem :asteroidData="{}" />
-    </div>
+    <h1 class="title">This is our home</h1>
+    <h2 class="subtitle">Look at it!</h2>
+    <SolarSystem :asteroidData="{}" />
   </div>
 </template>
 
@@ -23,7 +21,8 @@ export default {
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   text-align: center;
 }
 
@@ -33,19 +32,18 @@ export default {
   display: block;
   font-weight: 300;
   font-size: 70px;
-  color: #35495e;
+  color: hsl(187, 64%, 74%);
   letter-spacing: 1px;
+  z-index: 2;
+  margin-top: 30px;
 }
 
 .subtitle {
   font-weight: 300;
   font-size: 42px;
-  color: #526488;
+  color: #8eb0f3;
   word-spacing: 5px;
   padding-bottom: 15px;
-}
-
-.links {
-  padding-top: 15px;
+  z-index: 2;
 }
 </style>

@@ -1,5 +1,12 @@
 <template>
-  <div ref="solarSystem"></div>
+  <div
+    ref="solarSystem"
+    class="solar-system"
+    @wheel="handleZoom"
+    @mousedown="handleMouseDown"
+    @mousemove="detectDrag"
+    @mouseup="resetMove"
+  ></div>
 </template>
 
 <script>
@@ -13,19 +20,37 @@ export default {
       default: () => {},
     },
   },
+  data() {
+    return {
+      cameraPositionZ: 700,
+      cameraPositionX: 0,
+      moved: false,
+    };
+  },
   computed: {
+    viewWidth: () => window.innerWidth,
+    viewHeight: () => window.innerHeight,
+    camera() {
+      return new three.PerspectiveCamera(
+        100,
+        this.viewWidth / this.viewHeight,
+        1,
+        15000
+      );
+      //camera.lookAt(scene.position);
+    },
     realSunRadius: () => 696340, //km
     realAU: () => 149597871, //km
-    relNum: () => 0.01,
+    relNum: () => 0.0001,
     sunRadius() {
-      return 1 / this.relNum;
+      return this.realSunRadius * this.relNum;
     },
     au() {
-      return 5 / this.relNum;
+      return 500; //this.realAU * this.relNum; //5 / this.relNum;
     },
     sun() {
       let radius = this.sunRadius;
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
+      let SphereGeometry = new three.SphereGeometry(radius, 150, 150);
       let material = new three.MeshPhongMaterial({
         color: 0xffcc00,
       });
@@ -36,127 +61,146 @@ export default {
       return sun;
     },
     mercury() {
-      let radius = this.sunRadius / Math.sqrt(277);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xcc5555,
-      });
-      let mercury = new three.Mesh(SphereGeometry, material);
-      mercury.position.set(0.4 * this.au, 0, 0);
-      mercury.receiveShadow = true;
-      mercury.castShadow = false;
+      let portionOfSunRadius = 2439.7 / this.realSunRadius;
+      let mercury = this.generatePlanet(
+        portionOfSunRadius,
+        "#cc5555",
+        0.4 * this.au
+      );
       return {
         object: mercury,
         data: { theta: 0, r: 0.4 * this.au, x: 0.4 * this.au, y: 0 },
       };
     },
     venus() {
-      let radius = this.sunRadius / Math.sqrt(115);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0x11ccff,
-      });
-      let venus = new three.Mesh(SphereGeometry, material);
-      venus.position.set(0.7 * this.au, 0, 0);
-      venus.receiveShadow = true;
-      venus.castShadow = false;
+      let portionOfSunRadius = 6051.8 / this.realSunRadius;
+      let venus = this.generatePlanet(
+        portionOfSunRadius,
+        "#11ccff",
+        0.7 * this.au
+      );
       return {
         object: venus,
         data: { theta: 0, r: 0.7 * this.au, x: 0.7 * this.au, y: 0 },
       };
     },
     earth() {
-      let radius = this.sunRadius / Math.sqrt(109);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0x1133ff,
-      });
-      let earth = new three.Mesh(SphereGeometry, material);
-      earth.position.set(this.au, 0, 0);
-      earth.receiveShadow = true;
-      earth.castShadow = false;
+      let portionOfSunRadius = 6371 / this.realSunRadius;
+      let earth = this.generatePlanet(portionOfSunRadius, "#1133ff", this.au);
       return {
         object: earth,
         data: { theta: 0, r: this.au, x: this.au, y: 0 },
       };
     },
     mars() {
-      let radius = this.sunRadius / Math.sqrt(109 / 0.53);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xff4444,
-      });
-      let mars = new three.Mesh(SphereGeometry, material);
-      mars.position.set(1.5 * this.au, 0, 0);
-      mars.receiveShadow = true;
-      mars.castShadow = false;
+      let portionOfSunRadius = 3389.5 / this.realSunRadius;
+      let mars = this.generatePlanet(
+        portionOfSunRadius,
+        "#ff4444",
+        1.5 * this.au
+      );
       return {
         object: mars,
         data: { theta: 0, r: 1.5 * this.au, x: 1.5 * this.au, y: 0 },
       };
     },
     jupiter() {
-      let radius = this.sunRadius / Math.sqrt(1392700 / 139820);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xff4444,
-      });
-      let jupiter = new three.Mesh(SphereGeometry, material);
-      jupiter.position.set(5.2 * this.au, 0, 0);
-      jupiter.receiveShadow = true;
-      jupiter.castShadow = false;
+      let portionOfSunRadius = 69911 / this.realSunRadius;
+      let jupiter = this.generatePlanet(
+        portionOfSunRadius,
+        "#ff4444",
+        5.2 * this.au
+      );
       return {
         object: jupiter,
         data: { theta: 0, r: 5.2 * this.au, x: 5.2 * this.au, y: 0 },
       };
     },
     saturn() {
-      let radius = this.sunRadius / Math.sqrt(1392700 / 116460);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xffffff,
-      });
-      let saturn = new three.Mesh(SphereGeometry, material);
-      saturn.position.set(9.5 * this.au, 0, 0);
-      saturn.receiveShadow = true;
-      saturn.castShadow = false;
+      let portionOfSunRadius = 58232 / this.realSunRadius;
+      let saturn = this.generatePlanet(
+        portionOfSunRadius,
+        "#ffffff",
+        9.5 * this.au
+      );
       return {
         object: saturn,
         data: { theta: 0, r: 9.5 * this.au, x: 9.5 * this.au, y: 0 },
       };
     },
     uranus() {
-      let radius = this.sunRadius / Math.sqrt(1392700 / 50724);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xddddff,
-      });
-      let uranus = new three.Mesh(SphereGeometry, material);
-      uranus.position.set(19.8 * this.au, 0, 0);
-      uranus.receiveShadow = true;
-      uranus.castShadow = false;
+      let portionOfSunRadius = 25362 / this.realSunRadius;
+      let uranus = this.generatePlanet(
+        portionOfSunRadius,
+        "#ddddff",
+        19.8 * this.au
+      );
       return {
         object: uranus,
         data: { theta: 0, r: 19.8 * this.au, x: 19.8 * this.au, y: 0 },
       };
     },
     neptune() {
-      let radius = this.sunRadius / Math.sqrt(1392700 / 49244);
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
-        color: 0xccccff,
-      });
-      let neptune = new three.Mesh(SphereGeometry, material);
-      neptune.position.set(30 * this.au, 0, 0);
-      neptune.receiveShadow = true;
-      neptune.castShadow = false;
+      let portionOfSunRadius = 24622 / this.realSunRadius;
+      let neptune = this.generatePlanet(
+        portionOfSunRadius,
+        "#ccccff",
+        30 * this.au
+      );
       return {
         object: neptune,
         data: { theta: 0, r: 30 * this.au, x: 30 * this.au, y: 0 },
       };
     },
+    gravityConst: () => 6.67 * Math.pow(10, -11),
   },
   methods: {
+    handleZoom(event) {
+      event.preventDefault();
+      if (event.deltaY < 0 && this.cameraPositionZ > 100) {
+        this.cameraPositionZ -= this.cameraPositionZ / 10;
+      } else if (event.deltaY > 0 && this.cameraPositionZ < 15000) {
+        this.cameraPositionZ += this.cameraPositionZ / 10;
+      }
+      this.camera.position.z = this.cameraPositionZ;
+    },
+    handleMouseDown(event) {
+      console.log("Event down:", event);
+      this.moved = { x: event.x, y: event.y };
+    },
+    detectDrag(event) {
+      console.log("Moved:", this.moved);
+      if (!!this.moved) {
+        let moveX, moveY;
+        moveX = event.x - this.moved.x;
+        moveY = event.y - this.moved.y;
+
+        console.log("Move:", moveX, moveY);
+        this.camera.position.x = this.camera.position.x - moveX;
+        this.camera.position.y = this.camera.position.y + moveY;
+
+        this.moved = {
+          x: event.x,
+          y: event.y,
+        };
+      }
+    },
+    resetMove(event) {
+      console.log("Event up:", event);
+      this.moved = false;
+    },
+    generatePlanet(portionOfSunRadius, color, distanceFromSun) {
+      let radius = this.sunRadius * portionOfSunRadius; //Math.sqrt(timesSunDiam);
+      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
+      let material = new three.MeshPhongMaterial({
+        color,
+      });
+      let planet = new three.Mesh(SphereGeometry, material);
+      planet.position.set(distanceFromSun, 0, 0);
+      planet.receiveShadow = true;
+      planet.castShadow = false;
+      return planet;
+    },
     generateModel() {
       let mercury = this.mercury;
       let venus = this.venus;
@@ -167,14 +211,11 @@ export default {
       let uranus = this.uranus;
       let neptune = this.neptune;
 
-      let width = window.innerWidth;
-      let height = window.innerHeight * 0.8;
       let scene = new three.Scene();
-      let camera = new three.PerspectiveCamera(100, width / height, 1, 15000);
-      //camera.lookAt(scene.position);
+      let camera = this.camera;
 
       let renderer = new three.WebGLRenderer();
-      renderer.setSize(width, height);
+      renderer.setSize(this.viewWidth, this.viewHeight);
 
       let ambientLight = new three.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
@@ -184,7 +225,7 @@ export default {
       pointLight.castShadow = true;
       camera.add(pointLight);
 
-      camera.position.z = 1000;
+      camera.position.z = this.cameraPositionZ;
       scene.add(this.sun);
       scene.add(mercury.object);
       scene.add(venus.object);
@@ -228,6 +269,9 @@ export default {
     getNewPos(planet) {
       let planetData = {
         theta: planet.data.theta,
+        /*  x: this.getXPosFromGravity(planet.data.r, 1, planet.data.theta),
+        y: this.getYPosFromGravity(planet.data.r, 1, planet.data.theta), */
+
         x: getXPos(0, planet.data.theta, planet.data.r),
         y: getYPos(0, planet.data.theta, planet.data.r),
       };
@@ -240,9 +284,41 @@ export default {
         return y + Math.sin((Math.PI / 180) * theta) * radius;
       }
     },
+    getXPosFromGravity(r, m1, theta) {
+      let t1 = 0;
+      let t2 = 0.5;
+      return Math.sqrt(
+        (t1 - t2) *
+          ((this.gravityConst * m1 * (Math.cos(theta) + Math.sin(theta))) /
+            Math.pow(r, 2)) -
+          Math.pow(r, 2) * Math.sin(theta)
+      );
+    },
+    getYPosFromGravity(r, m1, theta) {
+      let t1 = 0;
+      let t2 = 0.5;
+      return Math.sqrt(
+        (t1 - t2) *
+          ((this.gravityConst * m1 * (Math.cos(theta) + Math.sin(theta))) /
+            Math.pow(r, 2)) -
+          Math.pow(r, 2) * Math.cos(theta)
+      );
+    },
+    orbitalPeriod(r, m) {
+      // r = distance from central body, m = mass of central body
+      return 2 * Math.PI * r * Math.sqrt(r / (this.gravityConst * m));
+    },
   },
   mounted() {
     this.generateModel();
   },
 };
 </script>
+
+<style scoped>
+.solar-system {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+</style>
