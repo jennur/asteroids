@@ -1,3 +1,3 @@
 # Asteroids 
 
-Me playing with asteroid data ☄️
+Me trying to make a solar system 🪐
