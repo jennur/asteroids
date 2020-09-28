@@ -48,11 +48,11 @@ export default {
       return this.realSunMass * this.relNum; // Should be different relNum
     },
     au() {
-      return (this.realAU * this.relNum) / 300; // Distance reduced by 300
+      return (this.realAU * this.relNum) / 300; // 1 AU reduced by 300
     },
     gravityConst: () => 6.67 * Math.pow(10, -11),
     sun() {
-      let radius = this.sunRadius / 5; // Size (but not mass) of sun reduced another 5 times (other planets are not)
+      let radius = this.sunRadius / 5; // Sun radius reduced another 5 times (other planets are not)
       let SphereGeometry = new three.SphereGeometry(radius, 150, 150);
       let material = new three.MeshPhongMaterial({
         color: 0xffcc00,
@@ -271,7 +271,7 @@ export default {
         neptune.data.theta += 0.05;
 
         requestAnimationFrame(animate);
-        mercury.data.theta += 0.5;
+
         this.getNewPos(mercury);
         this.getNewPos(venus);
         this.getNewPos(earth);
@@ -290,6 +290,7 @@ export default {
     },
     getNewPos(planet) {
       let planetData = {
+        theta: planet.data.theta,
         /* x: this.xVector(0.5, planet.data.x, this.sunMass, planet.data.m),
         y: this.yVector(0.5, planet.data.y, this.sunMass, planet.data.m),
         z: this.zVector(0.5, planet.data.z, this.sunMass, planet.data.m), */
