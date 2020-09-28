@@ -6,7 +6,13 @@
     @mousedown="handleMouseDown"
     @mousemove="detectDrag"
     @mouseup="resetMove"
-  ></div>
+  >
+    <div class="coordinates">
+      <span><strong>X:</strong>{{ cameraPositionX }}</span>
+      <span><strong>Y:</strong>{{ cameraPositionY }}</span>
+      <span><strong>Z:</strong>{{ cameraPositionZ }}</span>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -22,34 +28,31 @@ export default {
   },
   data() {
     return {
-      cameraPositionZ: 700,
       cameraPositionX: 0,
+      cameraPositionY: 0,
+      cameraPositionZ: 15000,
       moved: false,
     };
   },
   computed: {
     viewWidth: () => window.innerWidth,
     viewHeight: () => window.innerHeight,
-    camera() {
-      return new three.PerspectiveCamera(
-        100,
-        this.viewWidth / this.viewHeight,
-        1,
-        15000
-      );
-      //camera.lookAt(scene.position);
-    },
     realSunRadius: () => 696340, //km
+    realSunMass: () => 1.989 * Math.pow(10, 30), //kg
     realAU: () => 149597871, //km
-    relNum: () => 0.0001,
+    relNum: () => 0.01,
     sunRadius() {
       return this.realSunRadius * this.relNum;
     },
-    au() {
-      return 500; //this.realAU * this.relNum; //5 / this.relNum;
+    sunMass() {
+      return this.realSunMass * this.relNum; // Should be different relNum
     },
+    au() {
+      return (this.realAU * this.relNum) / 300; // Distance reduced by 300
+    },
+    gravityConst: () => 6.67 * Math.pow(10, -11),
     sun() {
-      let radius = this.sunRadius;
+      let radius = this.sunRadius / 5; // Size (but not mass) of sun reduced another 5 times (other planets are not)
       let SphereGeometry = new three.SphereGeometry(radius, 150, 150);
       let material = new three.MeshPhongMaterial({
         color: 0xffcc00,
@@ -69,7 +72,14 @@ export default {
       );
       return {
         object: mercury,
-        data: { theta: 0, r: 0.4 * this.au, x: 0.4 * this.au, y: 0 },
+        data: {
+          theta: 0,
+          m: 3.285 * Math.pow(10, 23) * this.relNum,
+          r: 0.4 * this.au,
+          x: 0.1,
+          y: 0.1,
+          z: 0.1,
+        },
       };
     },
     venus() {
@@ -152,33 +162,47 @@ export default {
         data: { theta: 0, r: 30 * this.au, x: 30 * this.au, y: 0 },
       };
     },
-    gravityConst: () => 6.67 * Math.pow(10, -11),
+    camera() {
+      return new three.PerspectiveCamera(
+        100,
+        this.viewWidth / this.viewHeight,
+        1000,
+        55000
+      );
+      camera.lookAt(scene.position);
+    },
   },
   methods: {
     handleZoom(event) {
       event.preventDefault();
-      if (event.deltaY < 0 && this.cameraPositionZ > 100) {
-        this.cameraPositionZ -= this.cameraPositionZ / 10;
-      } else if (event.deltaY > 0 && this.cameraPositionZ < 15000) {
-        this.cameraPositionZ += this.cameraPositionZ / 10;
+      if (event.deltaY < 0 && this.cameraPositionZ > 4000) {
+        this.cameraPositionZ -= Math.round(this.cameraPositionZ / 10);
+      } else if (event.deltaY > 0 && this.cameraPositionZ < 50000) {
+        this.cameraPositionZ += Math.round(this.cameraPositionZ / 10);
       }
-      this.camera.position.z = this.cameraPositionZ;
+      this.camera.position.z = Math.round(this.cameraPositionZ);
     },
     handleMouseDown(event) {
-      console.log("Event down:", event);
       this.moved = { x: event.x, y: event.y };
     },
     detectDrag(event) {
-      console.log("Moved:", this.moved);
+      let zCoord = this.cameraPositionZ;
+      let zAdjuster = zCoord / 500;
+
       if (!!this.moved) {
         let moveX, moveY;
         moveX = event.x - this.moved.x;
         moveY = event.y - this.moved.y;
 
-        console.log("Move:", moveX, moveY);
-        this.camera.position.x = this.camera.position.x - moveX;
-        this.camera.position.y = this.camera.position.y + moveY;
+        this.cameraPositionX = Math.round(
+          this.camera.position.x - zAdjuster * moveX
+        );
+        this.cameraPositionY = Math.round(
+          this.camera.position.y + zAdjuster * moveY
+        );
 
+        this.camera.position.x = this.cameraPositionX;
+        this.camera.position.y = this.cameraPositionY;
         this.moved = {
           x: event.x,
           y: event.y,
@@ -186,11 +210,10 @@ export default {
       }
     },
     resetMove(event) {
-      console.log("Event up:", event);
       this.moved = false;
     },
     generatePlanet(portionOfSunRadius, color, distanceFromSun) {
-      let radius = this.sunRadius * portionOfSunRadius; //Math.sqrt(timesSunDiam);
+      let radius = this.sunRadius * portionOfSunRadius;
       let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
       let material = new three.MeshPhongMaterial({
         color,
@@ -238,18 +261,17 @@ export default {
       let theta = 0;
 
       const animate = () => {
-        theta += 1;
-        mercury.data.theta += 1.5;
-        venus.data.theta += 1.2;
-        earth.data.theta += 1;
-        mars.data.theta += 0.7;
-        jupiter.data.theta += 0.6;
-        saturn.data.theta += 0.5;
-        uranus.data.theta += 0.4;
-        neptune.data.theta += 0.3;
+        mercury.data.theta += 0.3;
+        venus.data.theta += 0.2;
+        earth.data.theta += 0.3;
+        mars.data.theta += 0.25;
+        jupiter.data.theta += 0.13;
+        saturn.data.theta += 0.1;
+        uranus.data.theta += 0.12;
+        neptune.data.theta += 0.05;
 
         requestAnimationFrame(animate);
-
+        mercury.data.theta += 0.5;
         this.getNewPos(mercury);
         this.getNewPos(venus);
         this.getNewPos(earth);
@@ -262,16 +284,15 @@ export default {
         renderer.render(scene, camera);
       };
       animate();
-
+      renderer.render(scene, camera);
       let solarSystem = this.$refs.solarSystem;
       solarSystem.append(renderer.domElement);
     },
     getNewPos(planet) {
       let planetData = {
-        theta: planet.data.theta,
-        /*  x: this.getXPosFromGravity(planet.data.r, 1, planet.data.theta),
-        y: this.getYPosFromGravity(planet.data.r, 1, planet.data.theta), */
-
+        /* x: this.xVector(0.5, planet.data.x, this.sunMass, planet.data.m),
+        y: this.yVector(0.5, planet.data.y, this.sunMass, planet.data.m),
+        z: this.zVector(0.5, planet.data.z, this.sunMass, planet.data.m), */
         x: getXPos(0, planet.data.theta, planet.data.r),
         y: getYPos(0, planet.data.theta, planet.data.r),
       };
@@ -284,25 +305,17 @@ export default {
         return y + Math.sin((Math.PI / 180) * theta) * radius;
       }
     },
-    getXPosFromGravity(r, m1, theta) {
-      let t1 = 0;
-      let t2 = 0.5;
-      return Math.sqrt(
-        (t1 - t2) *
-          ((this.gravityConst * m1 * (Math.cos(theta) + Math.sin(theta))) /
-            Math.pow(r, 2)) -
-          Math.pow(r, 2) * Math.sin(theta)
-      );
+    distance(x, y, z) {
+      return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(y, 2));
     },
-    getYPosFromGravity(r, m1, theta) {
-      let t1 = 0;
-      let t2 = 0.5;
-      return Math.sqrt(
-        (t1 - t2) *
-          ((this.gravityConst * m1 * (Math.cos(theta) + Math.sin(theta))) /
-            Math.pow(r, 2)) -
-          Math.pow(r, 2) * Math.cos(theta)
-      );
+    xVector(x, m1, m2) {
+      return (this.gravityConst * (m1 * m2)) / Math.pow(x, 2);
+    },
+    yVector(y, m1, m2) {
+      return (this.gravityConst * (m1 * m2)) / Math.pow(y, 2);
+    },
+    zVector(y, m1, m2) {
+      return (this.gravityConst * (m1 * m2)) / Math.pow(y, 2);
     },
     orbitalPeriod(r, m) {
       // r = distance from central body, m = mass of central body
@@ -320,5 +333,11 @@ export default {
   position: fixed;
   top: 0;
   left: 0;
+}
+.coordinates {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  color: white;
 }
 </style>
