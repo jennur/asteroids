@@ -1,3 +1,3 @@
 # Asteroids 
 
-Me trying to make a solar system 🪐
+Me trying to make a solar system ☄️🪐
