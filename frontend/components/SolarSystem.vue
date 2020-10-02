@@ -17,7 +17,7 @@
 
 <script>
 import * as three from "three";
-
+import earthPositions from "../json/earth.json";
 export default {
   name: "solar-system",
   props: {
@@ -32,6 +32,7 @@ export default {
       cameraPositionY: 0,
       cameraPositionZ: 15000,
       moved: false,
+      earthPos: []
     };
   },
   computed: {
@@ -225,14 +226,7 @@ export default {
       return planet;
     },
     generateModel() {
-      let mercury = this.mercury;
-      let venus = this.venus;
       let earth = this.earth;
-      let mars = this.mars;
-      let jupiter = this.jupiter;
-      let saturn = this.saturn;
-      let uranus = this.uranus;
-      let neptune = this.neptune;
 
       let scene = new three.Scene();
       let camera = this.camera;
@@ -250,78 +244,35 @@ export default {
 
       camera.position.z = this.cameraPositionZ;
       scene.add(this.sun);
-      scene.add(mercury.object);
-      scene.add(venus.object);
       scene.add(earth.object);
-      scene.add(mars.object);
-      scene.add(jupiter.object);
-      scene.add(saturn.object);
-      scene.add(uranus.object);
-      scene.add(neptune.object);
-      let theta = 0;
 
+      let theta = 0;
+      let i = 0;
       const animate = () => {
-        mercury.data.theta += 0.3;
-        venus.data.theta += 0.2;
-        earth.data.theta += 0.3;
-        mars.data.theta += 0.25;
-        jupiter.data.theta += 0.13;
-        saturn.data.theta += 0.1;
-        uranus.data.theta += 0.12;
-        neptune.data.theta += 0.05;
 
         requestAnimationFrame(animate);
-
-        this.getNewPos(mercury);
-        this.getNewPos(venus);
-        this.getNewPos(earth);
-        this.getNewPos(mars);
-        this.getNewPos(jupiter);
-        this.getNewPos(saturn);
-        this.getNewPos(uranus);
-        this.getNewPos(neptune);
+        this.getNewPos(earth, i);
 
         renderer.render(scene, camera);
+        i++;
+        if(i >= this.earthPos.length) i = 0;
       };
       animate();
       renderer.render(scene, camera);
       let solarSystem = this.$refs.solarSystem;
       solarSystem.append(renderer.domElement);
     },
-    getNewPos(planet) {
+    getNewPos(planet, i) {
       let planetData = {
-        theta: planet.data.theta,
-        /* x: this.xVector(0.5, planet.data.x, this.sunMass, planet.data.m),
-        y: this.yVector(0.5, planet.data.y, this.sunMass, planet.data.m),
-        z: this.zVector(0.5, planet.data.z, this.sunMass, planet.data.m), */
-        x: getXPos(0, planet.data.theta, planet.data.r),
-        y: getYPos(0, planet.data.theta, planet.data.r),
+        x: this.earthPos[i].x,
+        y: this.earthPos[i].y,
+        z: this.earthPos[i].z
       };
-      planet.object.position.set(planetData.x, planetData.y, 0);
-
-      function getXPos(x, theta, radius) {
-        return x + Math.cos((Math.PI / 180) * theta) * radius;
-      }
-      function getYPos(y, theta, radius) {
-        return y + Math.sin((Math.PI / 180) * theta) * radius;
-      }
+      planet.object.position.set(planetData.x, planetData.y, planetData.z);
     },
-    distance(x, y, z) {
-      return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(y, 2));
-    },
-    xVector(x, m1, m2) {
-      return (this.gravityConst * (m1 * m2)) / Math.pow(x, 2);
-    },
-    yVector(y, m1, m2) {
-      return (this.gravityConst * (m1 * m2)) / Math.pow(y, 2);
-    },
-    zVector(y, m1, m2) {
-      return (this.gravityConst * (m1 * m2)) / Math.pow(y, 2);
-    },
-    orbitalPeriod(r, m) {
-      // r = distance from central body, m = mass of central body
-      return 2 * Math.PI * r * Math.sqrt(r / (this.gravityConst * m));
-    },
+  },
+  created(){
+    this.earthPos = earthPositions.position;
   },
   mounted() {
     this.generateModel();

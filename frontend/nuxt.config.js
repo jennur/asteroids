@@ -33,6 +33,7 @@ export default {
   ** Nuxt.js dev-modules
   */
   buildModules: [
+    "~/modules/csvToJson.js"
   ],
   /*
   ** Nuxt.js modules
