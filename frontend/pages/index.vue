@@ -36,6 +36,7 @@ export default {
   letter-spacing: 1px;
   z-index: 2;
   margin-top: 30px;
+  user-select: none;
 }
 
 .subtitle {

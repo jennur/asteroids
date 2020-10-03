@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import * as three from "three";
+import * as THREE from "THREE";
 import earthPositions from "../json/earth.json";
 
 import sunMap from "../assets/sun.jpg";
@@ -24,7 +24,10 @@ import earthClouds from "../assets/earth_clouds.jpg";
 import earthElevBump from "../assets/earth_elev_bump.jpg";
 import earthWater from "../assets/earth_water.png";
 import earthMap from "../assets/earth.jpg";
-import galaxyStarfield from "../assets/galaxy_starfield.png";
+import galaxyStarfield from "../assets/galaxy_starfield.jpg";
+
+const lowerPlane = 0.1;
+const upperPlane = 55000;
 
 export default {
   name: "solar-system",
@@ -39,36 +42,43 @@ export default {
       cameraPositionX: 0,
       cameraPositionY: 0,
       cameraPositionZ: 15000,
-      moved: false,
-      earthPos: []
+      moved: false
     };
   },
   computed: {
+    earthPos: () => earthPositions.position,
     viewWidth: () => window.innerWidth,
     viewHeight: () => window.innerHeight,
     realSunRadius: () => 696340, //km
-    realSunMass: () => 1.989 * Math.pow(10, 30), //kg
     realAU: () => 149597871, //km
     relNum: () => 0.2,
     sunRadius() {
       return this.realSunRadius * this.relNum;
     },
-    sunMass() {
-      return this.realSunMass * this.relNum; // Should be different relNum
-    },
     au() {
       return (this.realAU * this.relNum) / 300; // 1 AU reduced by 300
     },
+    universe(){
+      let radius = this.viewWidth;
+      let SphereGeometry = new THREE.SphereGeometry(radius, 1,1);
+      let material = new THREE.MeshBasicMaterial({
+        map: new THREE.TextureLoader().load(galaxyStarfield),
+        side: THREE.BackSide
+      })
+
+      let universe = new THREE.Mesh(SphereGeometry, material);
+      universe.position.set(0, 0, 0);
+      universe.receiveShadow = false;
+      return universe;
+    },
     sun() {
       let radius = this.sunRadius / 25; // Sun radius reduced another 5 times (other planets are not)
-      let SphereGeometry = new three.SphereGeometry(radius, 500, 500);
-      let material = new three.MeshLambertMaterial({
-          map: three.ImageUtils.loadTexture(sunMap),
-          bumpScale:   0.005,
-          specular: new three.Color('grey')
+      let SphereGeometry = new THREE.SphereGeometry(radius, 500, 500);
+      let material = new THREE.MeshLambertMaterial({
+          map: new THREE.TextureLoader().load(sunMap)
         })
       material.emissive = 0x000;
-      let sun = new three.Mesh(SphereGeometry, material);
+      let sun = new THREE.Mesh(SphereGeometry, material);
       sun.position.set(0, 0, 0);
       sun.receiveShadow = false;
       //sun.castShadow = true;
@@ -77,30 +87,24 @@ export default {
     earth() {
       let portionOfSunRadius = 6371 / this.realSunRadius;
       let radius = this.sunRadius * portionOfSunRadius;
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshLambertMaterial({
-          map: three.ImageUtils.loadTexture(earthMap),
-          bumpMap: three.ImageUtils.loadTexture(earthElevBump),
-          bumpScale:   0.005,
-          specularMap: three.ImageUtils.loadTexture(earthWater),
-          specular: new three.Color('grey')
+      let SphereGeometry = new THREE.SphereGeometry(radius, 100, 100);
+      let material = new THREE.MeshPhongMaterial({
+          map: new THREE.TextureLoader().load(earthMap),
+          bumpMap: new THREE.TextureLoader().load(earthElevBump),
+          specularMap: new THREE.TextureLoader().load(earthWater)
         })
-      let earth = new three.Mesh(SphereGeometry, material);
+      let earth = new THREE.Mesh(SphereGeometry, material);
       earth.position.set(this.au, 0, 0);
       earth.receiveShadow = true;
       earth.castShadow = false;
-      //let earth = this.generatePlanet(portionOfSunRadius, "#1133ff", this.au);
-      return {
-        object: earth,
-        data: { theta: 0, r: this.au, x: this.au, y: 0 },
-      };
+      return earth;
     },
     camera() {
-      return new three.PerspectiveCamera(
+      return new THREE.PerspectiveCamera(
         100,
         this.viewWidth / this.viewHeight,
-        1000,
-        55000
+        lowerPlane,
+        upperPlane
       );
       camera.lookAt(scene.position);
     },
@@ -108,11 +112,17 @@ export default {
   methods: {
     handleZoom(event) {
       event.preventDefault();
-      if (event.deltaY < 0 && this.cameraPositionZ > 4000) {
+      if (event.deltaY < 0 && this.cameraPositionZ > this.sunRadius / 25) {
         this.cameraPositionZ -= Math.round(this.cameraPositionZ / 10);
-      } else if (event.deltaY > 0 && this.cameraPositionZ < 50000) {
+      } else if (event.deltaY > 0 && this.cameraPositionZ < upperPlane) {
         this.cameraPositionZ += Math.round(this.cameraPositionZ / 10);
       }
+      if(this.cameraPositionZ <= this.sunRadius / 25)
+        this.cameraPositionZ = Math.ceil(this.sunRadius / 25);
+
+      if(this.cameraPositionZ >= upperPlane)
+        this.cameraPositionZ = upperPlane;
+
       this.camera.position.z = Math.round(this.cameraPositionZ);
     },
     handleMouseDown(event) {
@@ -144,57 +154,59 @@ export default {
     },
     resetMove(event) {
       this.moved = false;
-    },
+    },/*
     generatePlanet(portionOfSunRadius, color, distanceFromSun) {
       let radius = this.sunRadius * portionOfSunRadius;
-      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshLambertMaterial({
+      let SphereGeometry = new THREE.SphereGeometry(radius, 100, 100);
+      let material = new THREE.MeshLambertMaterial({
         color,
       });
-      let planet = new three.Mesh(SphereGeometry, material);
+      let planet = new THREE.Mesh(SphereGeometry, material);
       planet.position.set(distanceFromSun, 0, 0);
       planet.receiveShadow = true;
       planet.castShadow = false;
       return planet;
-    },
+    }, */
     generateModel() {
       let earth = this.earth;
 
-      let scene = new three.Scene();
+      let scene = new THREE.Scene();
       let camera = this.camera;
 
-      let renderer = new three.WebGLRenderer();
+      let renderer = new THREE.WebGLRenderer();
       renderer.setSize(this.viewWidth, this.viewHeight);
 
-      let ambientLight0 = new three.AmbientLight(0xffffff, 1);
-      ambientLight0.layers.set(0);
-      scene.add(ambientLight0);
-
-      let ambientLight1 = new three.AmbientLight(0xffffff, 0.3);
+      let ambientLight1 = new THREE.AmbientLight(0xffffff, 1);
       ambientLight1.layers.set(1);
       scene.add(ambientLight1);
 
-      var sunLight = new three.PointLight(0xffffff);
+      /* let ambientLight2 = new THREE.AmbientLight(0xffffff, 0.3);
+      ambientLight2.layers.set(2);
+      scene.add(ambientLight2); */
+
+      var sunLight = new THREE.PointLight(0xffffff);
       sunLight.position.set(0,0,0);
-      sunLight.layers.set(1);
-      sunLight.intensity = 2;
+      sunLight.layers.set(2); // Add light to planet layer
+      sunLight.intensity = 1;
 
       scene.add(sunLight);
 
       camera.position.z = this.cameraPositionZ;
 
-      this.sun.layers.set(0)
-      earth.object.layers.set(1)
+      this.universe.layers.set(0);
+      this.sun.layers.set(1)
+      earth.layers.set(2)
 
+      scene.add(this.universe);
       scene.add(this.sun);
-      scene.add(earth.object);
+      scene.add(earth);
 
       let theta = 0;
       let i = 0;
       const animate = () => {
 
         requestAnimationFrame(animate);
-        this.getNewPos(earth, i);
+        this.getNewPos(earth, i, this.earthPos);
 
         renderer.autoClear = true;
         camera.layers.set(0);
@@ -205,6 +217,9 @@ export default {
         camera.layers.set(1);
         renderer.render(scene, camera);
 
+        camera.layers.set(2);
+        renderer.render(scene, camera);
+
         i++;
         if(i >= this.earthPos.length) i = 0;
       };
@@ -213,17 +228,14 @@ export default {
       let solarSystem = this.$refs.solarSystem;
       solarSystem.append(renderer.domElement);
     },
-    getNewPos(planet, i) {
+    getNewPos(planet, i, planetPos) {
       let planetData = {
-        x: this.earthPos[i].x,
-        y: this.earthPos[i].y,
-        z: this.earthPos[i].z
+        x: planetPos[i].x,
+        y: planetPos[i].y,
+        z: planetPos[i].z
       };
-      planet.object.position.set(planetData.x, planetData.y, planetData.z);
+      planet.position.set(planetData.x, planetData.y, planetData.z);
     },
-  },
-  created(){
-    this.earthPos = earthPositions.position;
   },
   mounted() {
     this.generateModel();
