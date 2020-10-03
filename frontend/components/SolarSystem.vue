@@ -18,6 +18,14 @@
 <script>
 import * as three from "three";
 import earthPositions from "../json/earth.json";
+
+import sunMap from "../assets/sun.jpg";
+import earthClouds from "../assets/earth_clouds.jpg";
+import earthElevBump from "../assets/earth_elev_bump.jpg";
+import earthWater from "../assets/earth_water.png";
+import earthMap from "../assets/earth.jpg";
+import galaxyStarfield from "../assets/galaxy_starfield.png";
+
 export default {
   name: "solar-system",
   props: {
@@ -41,7 +49,7 @@ export default {
     realSunRadius: () => 696340, //km
     realSunMass: () => 1.989 * Math.pow(10, 30), //kg
     realAU: () => 149597871, //km
-    relNum: () => 0.01,
+    relNum: () => 0.2,
     sunRadius() {
       return this.realSunRadius * this.relNum;
     },
@@ -51,116 +59,40 @@ export default {
     au() {
       return (this.realAU * this.relNum) / 300; // 1 AU reduced by 300
     },
-    gravityConst: () => 6.67 * Math.pow(10, -11),
     sun() {
-      let radius = this.sunRadius / 5; // Sun radius reduced another 5 times (other planets are not)
-      let SphereGeometry = new three.SphereGeometry(radius, 150, 150);
-      let material = new three.MeshPhongMaterial({
-        color: 0xffcc00,
-      });
+      let radius = this.sunRadius / 25; // Sun radius reduced another 5 times (other planets are not)
+      let SphereGeometry = new three.SphereGeometry(radius, 500, 500);
+      let material = new three.MeshLambertMaterial({
+          map: three.ImageUtils.loadTexture(sunMap),
+          bumpScale:   0.005,
+          specular: new three.Color('grey')
+        })
+      material.emissive = 0x000;
       let sun = new three.Mesh(SphereGeometry, material);
       sun.position.set(0, 0, 0);
       sun.receiveShadow = false;
-      sun.castShadow = true;
+      //sun.castShadow = true;
       return sun;
-    },
-    mercury() {
-      let portionOfSunRadius = 2439.7 / this.realSunRadius;
-      let mercury = this.generatePlanet(
-        portionOfSunRadius,
-        "#cc5555",
-        0.4 * this.au
-      );
-      return {
-        object: mercury,
-        data: {
-          theta: 0,
-          m: 3.285 * Math.pow(10, 23) * this.relNum,
-          r: 0.4 * this.au,
-          x: 0.1,
-          y: 0.1,
-          z: 0.1,
-        },
-      };
-    },
-    venus() {
-      let portionOfSunRadius = 6051.8 / this.realSunRadius;
-      let venus = this.generatePlanet(
-        portionOfSunRadius,
-        "#11ccff",
-        0.7 * this.au
-      );
-      return {
-        object: venus,
-        data: { theta: 0, r: 0.7 * this.au, x: 0.7 * this.au, y: 0 },
-      };
     },
     earth() {
       let portionOfSunRadius = 6371 / this.realSunRadius;
-      let earth = this.generatePlanet(portionOfSunRadius, "#1133ff", this.au);
+      let radius = this.sunRadius * portionOfSunRadius;
+      let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
+      let material = new three.MeshLambertMaterial({
+          map: three.ImageUtils.loadTexture(earthMap),
+          bumpMap: three.ImageUtils.loadTexture(earthElevBump),
+          bumpScale:   0.005,
+          specularMap: three.ImageUtils.loadTexture(earthWater),
+          specular: new three.Color('grey')
+        })
+      let earth = new three.Mesh(SphereGeometry, material);
+      earth.position.set(this.au, 0, 0);
+      earth.receiveShadow = true;
+      earth.castShadow = false;
+      //let earth = this.generatePlanet(portionOfSunRadius, "#1133ff", this.au);
       return {
         object: earth,
         data: { theta: 0, r: this.au, x: this.au, y: 0 },
-      };
-    },
-    mars() {
-      let portionOfSunRadius = 3389.5 / this.realSunRadius;
-      let mars = this.generatePlanet(
-        portionOfSunRadius,
-        "#ff4444",
-        1.5 * this.au
-      );
-      return {
-        object: mars,
-        data: { theta: 0, r: 1.5 * this.au, x: 1.5 * this.au, y: 0 },
-      };
-    },
-    jupiter() {
-      let portionOfSunRadius = 69911 / this.realSunRadius;
-      let jupiter = this.generatePlanet(
-        portionOfSunRadius,
-        "#ff4444",
-        5.2 * this.au
-      );
-      return {
-        object: jupiter,
-        data: { theta: 0, r: 5.2 * this.au, x: 5.2 * this.au, y: 0 },
-      };
-    },
-    saturn() {
-      let portionOfSunRadius = 58232 / this.realSunRadius;
-      let saturn = this.generatePlanet(
-        portionOfSunRadius,
-        "#ffffff",
-        9.5 * this.au
-      );
-      return {
-        object: saturn,
-        data: { theta: 0, r: 9.5 * this.au, x: 9.5 * this.au, y: 0 },
-      };
-    },
-    uranus() {
-      let portionOfSunRadius = 25362 / this.realSunRadius;
-      let uranus = this.generatePlanet(
-        portionOfSunRadius,
-        "#ddddff",
-        19.8 * this.au
-      );
-      return {
-        object: uranus,
-        data: { theta: 0, r: 19.8 * this.au, x: 19.8 * this.au, y: 0 },
-      };
-    },
-    neptune() {
-      let portionOfSunRadius = 24622 / this.realSunRadius;
-      let neptune = this.generatePlanet(
-        portionOfSunRadius,
-        "#ccccff",
-        30 * this.au
-      );
-      return {
-        object: neptune,
-        data: { theta: 0, r: 30 * this.au, x: 30 * this.au, y: 0 },
       };
     },
     camera() {
@@ -216,7 +148,7 @@ export default {
     generatePlanet(portionOfSunRadius, color, distanceFromSun) {
       let radius = this.sunRadius * portionOfSunRadius;
       let SphereGeometry = new three.SphereGeometry(radius, 100, 100);
-      let material = new three.MeshPhongMaterial({
+      let material = new three.MeshLambertMaterial({
         color,
       });
       let planet = new three.Mesh(SphereGeometry, material);
@@ -234,15 +166,26 @@ export default {
       let renderer = new three.WebGLRenderer();
       renderer.setSize(this.viewWidth, this.viewHeight);
 
-      let ambientLight = new three.AmbientLight(0xffffff, 0.7);
-      scene.add(ambientLight);
+      let ambientLight0 = new three.AmbientLight(0xffffff, 1);
+      ambientLight0.layers.set(0);
+      scene.add(ambientLight0);
 
-      let pointLight = new three.PointLight(0xffff00, 1, 100, 2); //color, intensity, distance, decay
-      pointLight.position.set(-0.9, 0.9, 0);
-      pointLight.castShadow = true;
-      camera.add(pointLight);
+      let ambientLight1 = new three.AmbientLight(0xffffff, 0.3);
+      ambientLight1.layers.set(1);
+      scene.add(ambientLight1);
+
+      var sunLight = new three.PointLight(0xffffff);
+      sunLight.position.set(0,0,0);
+      sunLight.layers.set(1);
+      sunLight.intensity = 2;
+
+      scene.add(sunLight);
 
       camera.position.z = this.cameraPositionZ;
+
+      this.sun.layers.set(0)
+      earth.object.layers.set(1)
+
       scene.add(this.sun);
       scene.add(earth.object);
 
@@ -253,7 +196,15 @@ export default {
         requestAnimationFrame(animate);
         this.getNewPos(earth, i);
 
+        renderer.autoClear = true;
+        camera.layers.set(0);
         renderer.render(scene, camera);
+
+        renderer.autoClear = false;
+
+        camera.layers.set(1);
+        renderer.render(scene, camera);
+
         i++;
         if(i >= this.earthPos.length) i = 0;
       };
