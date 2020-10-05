@@ -1,18 +1,30 @@
 <template>
   <div class="container">
-    <h1 class="title">This is our home</h1>
-    <h2 class="subtitle">Look at it!</h2>
-    <SolarSystem :asteroidData="{}" />
+    <VisualizationScene :width="width"
+                        :height="height"
+                        :scenes="scenes"
+                        :backgroundImage="backgroundImage"
+    />
   </div>
 </template>
 
 <script>
-import SolarSystem from "~/components/SolarSystem.vue";
+import * as THREE from "three";
+import galaxyStarfield from "../assets/galaxy_starfield.jpg";
+import VisualizationScene from "~/components/VisualizationScene.vue";
 
 export default {
   components: {
-    SolarSystem,
+    VisualizationScene,
   },
+  computed: {
+    width: () => process.client && window.innerWidth || 1500,
+    height: () => process.client && window.innerHeight || 1000,
+    backgroundImage: () => galaxyStarfield,
+    scenes(){
+      return []
+    }
+  }
 };
 </script>
 

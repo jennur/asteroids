@@ -59,8 +59,8 @@ export default {
       return (this.realAU * this.relNum) / 300; // 1 AU reduced by 300
     },
     universe(){
-      let radius = this.viewWidth;
-      let SphereGeometry = new THREE.SphereGeometry(radius, 1,1);
+      let radius = this.sunRadius;
+      let SphereGeometry = new THREE.SphereGeometry(radius, 100,100);
       let material = new THREE.MeshBasicMaterial({
         map: new THREE.TextureLoader().load(galaxyStarfield),
         side: THREE.BackSide
